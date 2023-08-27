@@ -26,6 +26,13 @@ class State(rx.State):
     @rx.var
     def total_remaining(self):
         return round(self.budget_target - self.total_spent, 2)
+    
+    @rx.var
+    def spent_percentage(self) -> float:
+        if self.budget_target == 0:
+            return 0
+        else:
+            return round(self.total_spent/self.budget_target, 1)*100
 
     def add_item(self, form_data: dict[str, str]):
         name, amount = form_data["expense_name"], float(form_data["expense_amount"])
@@ -95,25 +102,39 @@ def new_item() -> rx.Component:
 
 
 def index() -> rx.Component:
-    return rx.box(
+    return rx.container(
         rx.heading("Budget for you week!", font_size = '2em'),
-        rx.editable(
-            rx.editable_preview(),
-            rx.editable_input(),
-            placeholder="0",
-            on_submit=State.set_budget_target,
-            font_size="2.25em",
-            font_weight="bold"
+        rx.hstack(
+            rx.text("Spending Limit:"),
+            rx.editable(
+                rx.editable_preview(),
+                rx.editable_input(),
+                placeholder="0",
+                on_submit=State.set_budget_target,
+                font_size="1em",
+            ),
         ),
-        rx.heading("Spent"),
-        rx.heading(State.total_spent),
-        rx.heading("Remaining:"),
-        rx.heading(State.total_remaining),
-        rx.heading("Expenses List"),
+        rx.hstack(
+            rx.text("Total Spent:"),
+            rx.text(State.total_spent),
+        ),
+        rx.hstack(
+            rx.text("Remaining:"),
+            rx.text(State.total_remaining),  
+        ),
+        rx.progress(value=State.spent_percentage, width="100%", color_scheme="green"),
+        rx.divider(border_color="black", margin="1em 0em"),
+        rx.text("Expenses List"),
         rx.unordered_list(
-            rx.foreach(State.expense_items, lambda item: expense_item(item))
+            rx.foreach(State.expense_items, lambda item: expense_item(item)),
+            list_style_type="none"
         ),
         new_item(),
+        background_color="#EDEDED",
+        padding="1em",
+        margin_top="2em",
+        border_radius=".5em",
+        center_content=True,
         )
 
 
