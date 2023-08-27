@@ -33,6 +33,16 @@ class State(rx.State):
             return 0
         else:
             return round(self.total_spent/self.budget_target, 1)*100
+        
+    @rx.var
+    def spent_bar_color(self):
+        if self.spent_percentage < 80:
+            return "green"
+        elif self.spent_percentage < 90:
+            return "yellow"
+        else:
+            return "red"
+
 
     def add_item(self, form_data: dict[str, str]):
         name, amount = form_data["expense_name"], float(form_data["expense_amount"])
@@ -94,7 +104,7 @@ def new_item() -> rx.Component:
         ),
         # Clicking the button will also submit the form.
         rx.center(
-            rx.button("Add", type_="submit", bg="white"),
+            rx.button("Add", type_="submit", bg="white", margin_top='.5em'),
         ),
         on_submit=State.add_item,
     )
@@ -104,27 +114,45 @@ def new_item() -> rx.Component:
 def index() -> rx.Component:
     return rx.container(
         rx.heading("Budget for you week!", font_size = '2em'),
-        rx.hstack(
-            rx.text("Spending Limit:"),
-            rx.editable(
-                rx.editable_preview(),
-                rx.editable_input(),
-                placeholder="0",
-                on_submit=State.set_budget_target,
-                font_size="1em",
-            ),
-        ),
-        rx.hstack(
-            rx.text("Total Spent:"),
-            rx.text(State.total_spent),
-        ),
-        rx.hstack(
-            rx.text("Remaining:"),
-            rx.text(State.total_remaining),  
-        ),
-        rx.progress(value=State.spent_percentage, width="100%", color_scheme="green"),
         rx.divider(border_color="black", margin="1em 0em"),
-        rx.text("Expenses List"),
+        rx.cond(
+            State.spent_bar_color == "red",
+            rx.progress(value=State.spent_percentage, width="100%", color_scheme="red"),
+            ),
+        rx.cond(
+            State.spent_bar_color == "yellow",
+            rx.progress(value=State.spent_percentage, width="100%", color_scheme="yellow"),
+            ),
+        rx.cond(
+            State.spent_bar_color == "green",
+            rx.progress(value=State.spent_percentage, width="100%", color_scheme="green"),
+            ),
+        rx.hstack(
+            rx.hstack(
+                rx.text("Spending Limit:"),
+                rx.editable(
+                    rx.editable_preview(),
+                    rx.editable_input(),
+                    placeholder="Enter Limit",
+                    on_submit=State.set_budget_target,
+                    font_size="1em",
+                    border="1px solid gray",
+                    border_radius=".75em",
+                    padding=".25em"
+                ),
+            ),
+            rx.hstack(
+                rx.text("Total Spent:"),
+                rx.text(State.total_spent),
+            ),
+            rx.hstack(
+                rx.text("Remaining:"),
+                rx.text(State.total_remaining),  
+            ),
+            margin_top="1em"
+        ),
+        rx.divider(border_color="black", margin="1em 0em"),
+        rx.heading("Expenses List", size='lg', margin_bottom='.5em'),
         rx.unordered_list(
             rx.foreach(State.expense_items, lambda item: expense_item(item)),
             list_style_type="none"
