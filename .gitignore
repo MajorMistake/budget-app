@@ -3,3 +3,6 @@
 .web
 __pycache__/
 /venv
+/alembic
+*.ini
+/test_scripts
