@@ -1,13 +1,17 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from state.base import State
+from state.models import User_Data
 
 import reflex as rx
+import json
 
 class BudgetState(State):
     budget_target: float
     spent: float
     expense_items: Dict[str, float] = {}
     buckets: Dict[str, float] = {}
+
+    db_record: Optional[User_Data] = None
 
 
     @rx.var
@@ -59,3 +63,33 @@ class BudgetState(State):
     
     def delete_bucket(self, bucket: List):
         del self.buckets[bucket[0]]
+
+    def load_data(self):
+        with rx.session() as session:
+            self.db_record = session.exec(User_Data.select.where(User_Data.user_id == self.user.user_id)).first()
+            self.budget_target = self.db_record.budget_target
+            self.expense_items = json.loads(self.db_record.transactions)
+            self.buckets = json.loads(self.db_record.buckets)
+
+    def save_data(self):
+        with rx.session() as session:
+            if session.exec(User_Data.select.where(User_Data.user_id == self.user.user_id)).first():
+                self.db_record.budget_target = self.budget_target
+                self.db_record.transactions = json.dumps(self.expense_items)
+                self.db_record.buckets = json.dumps(self.buckets)
+                session.add(self.db_record)
+                session.commit()
+            else:
+                session.add(User_Data(user_id=self.user.user_id ,budget_target=self.budget_target, transactions=json.dumps(self.expense_items),
+                                    buckets=json.dumps(self.buckets)))
+                session.commit()
+
+    def clear_data(self):
+        self.reset()
+
+    def check_login(self):
+        """Check if a user is logged in."""
+        if not self.logged_in:
+            return rx.redirect("/login")
+        else:
+            self.load_data()

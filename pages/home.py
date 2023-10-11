@@ -88,6 +88,12 @@ def login_form() -> rx.Component:
         rx.button("Login", type_="submit", bg="white", margin_top='.5em'),
     )
 
+def save_control() -> rx.Component:
+    return rx.center(
+        rx.button("Save", on_click=BudgetState.save_data),
+        rx.button("Clear", on_click=BudgetState.clear_data)
+    )
+
 
 def index() -> rx.Component:
     return rx.container(
@@ -142,6 +148,8 @@ def index() -> rx.Component:
             list_style_type="none"
         ),
         new_item(),
+        rx.divider(border_color="black", margin="1em 0em"),
+        save_control(),
         background_color="#EDEDED",
         padding="1em",
         margin_top="2em",
